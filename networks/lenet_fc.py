@@ -8,7 +8,7 @@ import numpy as np
 import utils
 
 HParams = namedtuple('HParams',
-                    'batch_size, num_classes, weight_decay, momentum')
+                    'batch_size, num_classes, fc_bias, weight_decay, momentum')
 
 class LeNet(object):
     def __init__(self, hp, images, labels, global_step, name='lenet'):
@@ -34,10 +34,10 @@ class LeNet(object):
             for i, f in enumerate(filters):
                 print('fc_%d: %d nodes' % ((i+1), f))
                 # fc_x
-                x = self._relu(self._fc(x, filters[0], name='fc_%d'%(i+1)), name='relu_%d'%(i+1))
+                x = self._relu(self._fc(x, filters[i], bias=self._hp.fc_bias, name='fc_%d'%(i+1)), name='relu_%d'%(i+1))
             # Logit
             print('logit: %d nodes' % (self._hp.num_classes))
-            x = self._fc(x, self._hp.num_classes, name='logit')
+            x = self._fc(x, self._hp.num_classes, bias=self._hp.fc_bias, name='logit')
 
             self._logits = x
 
@@ -104,11 +104,11 @@ class LeNet(object):
         self._add_flops_weights(scope_name, f, w)
         return x
 
-    def _fc(self, x, out_dim, name="fc"):
+    def _fc(self, x, out_dim, bias=True, name="fc"):
         b, in_dim = x.get_shape().as_list()
-        x = utils._fc(x, out_dim, name)
-        f = 2 * (in_dim + 1) * out_dim
-        w = (in_dim + 1) * out_dim
+        x = utils._fc(x, out_dim, bias, name)
+        f = 2 * (in_dim + 1) * out_dim if bias else 2 * in_dim * out_dim
+        w = (in_dim + 1) * out_dim if bias else in_dim * out_dim
         scope_name = tf.get_variable_scope().name + "/" + name
         self._add_flops_weights(scope_name, f, w)
         return x

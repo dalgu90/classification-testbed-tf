@@ -6,7 +6,7 @@ import tensorflow as tf
 WEIGHT_DECAY_KEY = 'WEIGHT_DECAY'
 GATING_KEY = 'GATING'
 
-def _fc(x, out_dim, name='fc'):
+def _fc(x, out_dim, bias=True, name='fc'):
     with tf.variable_scope(name):
         # Main operation: fc
         w = tf.get_variable('weights', [x.get_shape()[1], out_dim],
@@ -14,9 +14,12 @@ def _fc(x, out_dim, name='fc'):
                             stddev=np.sqrt(1.0/x.get_shape().as_list()[1])))
         if w not in tf.get_collection(WEIGHT_DECAY_KEY):
             tf.add_to_collection(WEIGHT_DECAY_KEY, w)
-        b = tf.get_variable('biases', [out_dim], tf.float32,
-                            initializer=tf.constant_initializer(0.0))
-        fc = tf.nn.bias_add(tf.matmul(x, w), b)
+        if not bias:
+            fc = tf.matmul(x, w)
+        else:
+            b = tf.get_variable('biases', [out_dim], tf.float32,
+                                initializer=tf.constant_initializer(0.0))
+            fc = tf.nn.bias_add(tf.matmul(x, w), b)
     return fc
 
 def _relu(x, leakness=0.0, name=None):

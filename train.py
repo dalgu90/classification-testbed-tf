@@ -7,8 +7,9 @@ import time
 import tensorflow as tf
 import numpy as np
 
+from tensorflow.examples.tutorials.mnist import input_data
 from data import cifar10_input, cifar100_input, mnist_input, cifar10, mnist
-from networks import lenet_fc, lenet_5, lenet_fc_test
+from networks import lenet_fc, lenet_5
 
 # Dataset Configuration
 tf.app.flags.DEFINE_string('dataset', 'cifar-10', """Dataset type.""")
@@ -19,6 +20,7 @@ tf.app.flags.DEFINE_integer('num_test_instance', 10000, """Number of test images
 
 # Network Configuration
 tf.app.flags.DEFINE_string('network', 'lenet', """Network architecture""")
+tf.app.flags.DEFINE_boolean('fc_bias', False, """Whether to add bias after fc multiply""")
 tf.app.flags.DEFINE_integer('batch_size', 100, """Number of images to process in a batch.""")
 
 # Optimization Configuration
@@ -53,6 +55,7 @@ def train():
 
     print('[Network Configuration]')
     print('\tNetwork architecture: %s' % FLAGS.network)
+    print('\tFC layer bias: %d' % FLAGS.fc_bias)
     print('\tBatch size: %d' % FLAGS.batch_size)
 
     print('[Optimization Configuration]')
@@ -95,13 +98,20 @@ def train():
                     test_images, test_labels = cifar100_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
         elif 'mnist'==FLAGS.dataset:
             # When using mnist(not mnist_input), make sure that batch_size is a divisor of 10000
-            with tf.device('/CPU:0'):
-                with tf.variable_scope('train_image'):
-                    # train_images, train_labels = mnist_input.distorted_inputs(FLAGS.data_dir, FLAGS.batch_size)
-                    train_images, train_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=True)
-                with tf.variable_scope('test_image'):
-                    # test_images, test_labels = mnist_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
-                    test_images, test_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=False)
+            # with tf.device('/CPU:0'):
+            #     with tf.variable_scope('train_image'):
+            #         # train_images, train_labels = mnist_input.distorted_inputs(FLAGS.data_dir, FLAGS.batch_size)
+            #         train_images, train_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=True)
+            #     with tf.variable_scope('test_image'):
+            #         # test_images, test_labels = mnist_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
+            #         test_images, test_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=False)
+            # Tensorflow default dataset
+            mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=False, validation_size=0)
+            train_images = tf.placeholder(tf.float32, [FLAGS.batch_size, 784])
+            train_labels = tf.placeholder(tf.int32, [FLAGS.batch_size])
+            test_images = tf.placeholder(tf.float32, [FLAGS.batch_size, 784])
+            test_labels = tf.placeholder(tf.int32, [FLAGS.batch_size])
+
 
         # Build model
         if 'lenet-fc'==FLAGS.network:
@@ -112,6 +122,7 @@ def train():
         # 1) Training Network
         hp = network.HParams(batch_size=FLAGS.batch_size,
                             num_classes=FLAGS.num_classes,
+                            fc_bias=FLAGS.fc_bias,
                             weight_decay=FLAGS.l2_weight,
                             momentum=FLAGS.momentum)
         network_train = network.LeNet(hp, train_images, train_labels, global_step, name='train')
@@ -169,8 +180,10 @@ def train():
             if step % FLAGS.test_interval == 0:
                 test_loss, test_acc = 0.0, 0.0
                 for i in range(FLAGS.test_iter):
+                    test_images_val, test_labels_val = mnist.test.next_batch(FLAGS.batch_size, shuffle=False)
                     loss_value, acc_value = sess.run([network_test.loss, network_test.acc],
-                                                     feed_dict={network_test.is_train:False})
+                                                     feed_dict={network_test.is_train:False, test_images:test_images_val, test_labels:test_labels_val})
+                                                     # feed_dict={network_test.is_train:False})
                     test_loss += loss_value
                     test_acc += acc_value
                 test_loss /= FLAGS.test_iter
@@ -189,10 +202,11 @@ def train():
             # Train
             lr_value = get_lr(FLAGS.initial_lr, FLAGS.lr_decay, lr_decay_steps, step)
             start_time = time.time()
-            train_images_val, train_labels_val = sess.run([train_images, train_labels])
+            train_images_val, train_labels_val = mnist.train.next_batch(FLAGS.batch_size, shuffle=True)
             _, lr_value, loss_value, acc_value, train_summary_str = \
                     sess.run([network_train.train_op, network_train.lr, network_train.loss, network_train.acc, train_summary_op],
-                        feed_dict={network_train.is_train:True, network_train.lr:lr_value})
+                        feed_dict={network_train.is_train:True, network_train.lr:lr_value, train_images:train_images_val, train_labels:train_labels_val})
+                        # feed_dict={network_train.is_train:True, network_train.lr:lr_value})
             duration = time.time() - start_time
 
             assert not np.isnan(loss_value)
