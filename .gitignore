@@ -60,5 +60,7 @@ data/mnist/*
 *.sh
 lenet5-cifar10-scratch
 lenet-mnist-scratch
+lenet5-mnist-scratch
 !lenet5_cifar10_scratch.sh
 !lenet_mnist_scratch.sh
+!lenet5_mnist_scratch.sh

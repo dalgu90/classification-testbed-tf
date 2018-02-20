@@ -9,6 +9,7 @@ import utils
 
 HParams = namedtuple('HParams',
                     'batch_size, num_classes, fc_bias, weight_decay, momentum')
+HParams.__new__.__defaults__ = (100, 10, True, 0.0001, 0.9)
 
 class LeNet(object):
     def __init__(self, hp, images, labels, global_step, name='lenet'):
