@@ -1,10 +1,10 @@
 #!/bin/sh
-export CUDA_VISIBLE_DEVICES=5
-train_dir="./lenet5-mnist3-scratch"
+export CUDA_VISIBLE_DEVICES=6
+train_dir="./lenet5-mnist-scratch"
 
 python train.py --train_dir $train_dir \
     --network "lenet-5" \
-    --dataset "mnist-aug" \
+    --dataset "mnist" \
     --data_dir "data/mnist/" \
     --num_train_instance 60000 \
     --num_classes 10 \
