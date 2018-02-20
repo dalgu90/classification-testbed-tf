@@ -1,5 +1,5 @@
 #!/bin/sh
-export CUDA_VISIBLE_DEVICES=6
+export CUDA_VISIBLE_DEVICES=0
 train_dir="./lenet5-mnist-scratch"
 
 python train.py --train_dir $train_dir \

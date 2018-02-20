@@ -12,14 +12,14 @@ from data import cifar10_input, cifar100_input, mnist_input, cifar10, mnist
 from networks import lenet_fc, lenet_5
 
 # Dataset Configuration
-tf.app.flags.DEFINE_string('dataset', 'cifar-10', """Dataset type.""")
-tf.app.flags.DEFINE_string('data_dir', './cifar-10-binary/cifar-10-batches-bin/', """Path to the dataset.""")
+tf.app.flags.DEFINE_string('dataset', 'mnist', """Dataset type.""")
+tf.app.flags.DEFINE_string('data_dir', './data/mnist/', """Path to the dataset.""")
 tf.app.flags.DEFINE_integer('num_classes', 10, """Number of classes in the dataset.""")
-tf.app.flags.DEFINE_integer('num_train_instance', 50000, """Number of training images.""")
+tf.app.flags.DEFINE_integer('num_train_instance', 60000, """Number of training images.""")
 tf.app.flags.DEFINE_integer('num_test_instance', 10000, """Number of test images.""")
 
 # Network Configuration
-tf.app.flags.DEFINE_string('network', 'lenet', """Network architecture""")
+tf.app.flags.DEFINE_string('network', 'lenet-fc', """Network architecture""")
 tf.app.flags.DEFINE_boolean('fc_bias', False, """Whether to add bias after fc multiply""")
 tf.app.flags.DEFINE_integer('batch_size', 100, """Number of images to process in a batch.""")
 
@@ -27,17 +27,17 @@ tf.app.flags.DEFINE_integer('batch_size', 100, """Number of images to process in
 tf.app.flags.DEFINE_float('l2_weight', 0.0001, """L2 loss weight applied all the weights""")
 tf.app.flags.DEFINE_float('momentum', 0.9, """The momentum of MomentumOptimizer""")
 tf.app.flags.DEFINE_float('initial_lr', 0.1, """Initial learning rate""")
-tf.app.flags.DEFINE_string('lr_step_epoch', "10.0,20.0", """Epochs after which learing rate decays""")
+tf.app.flags.DEFINE_string('lr_step_epoch', "100.0", """Epochs after which learing rate decays""")
 tf.app.flags.DEFINE_float('lr_decay', 0.1, """Learning rate decay factor""")
 
 # Training Configuration
 tf.app.flags.DEFINE_string('train_dir', './train', """Directory where to write log and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 100000, """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('max_steps', 120000, """Number of batches to run.""")
 tf.app.flags.DEFINE_integer('display', 100, """Number of iterations to display training info.""")
-tf.app.flags.DEFINE_integer('test_interval', 1000, """Number of iterations to run a test""")
+tf.app.flags.DEFINE_integer('test_interval', 600, """Number of iterations to run a test""")
 tf.app.flags.DEFINE_integer('test_iter', 100, """Number of iterations during a test""")
 tf.app.flags.DEFINE_integer('checkpoint_interval', 10000, """Number of iterations to save parameters as a checkpoint""")
-tf.app.flags.DEFINE_float('gpu_fraction', 0.95, """The fraction of GPU memory to be allocated""")
+tf.app.flags.DEFINE_float('gpu_fraction', 0.96, """The fraction of GPU memory to be allocated""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
 tf.app.flags.DEFINE_string('checkpoint', None, """Model checkpoint to load""")
 
