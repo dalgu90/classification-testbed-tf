@@ -97,11 +97,11 @@ def train():
                     test_images, test_labels = cifar100_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
         elif 'mnist'==FLAGS.dataset:
             # Tensorflow default dataset
-            mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=False, validation_size=0)
+            mnist_read = input_data.read_data_sets(FLAGS.data_dir, one_hot=False, validation_size=0)
             def train_func():
-                return mnist.train.next_batch(FLAGS.batch_size, shuffle=True)
+                return mnist_read.train.next_batch(FLAGS.batch_size, shuffle=True)
             def test_func():
-                return mnist.test.next_batch(FLAGS.batch_size, shuffle=False)
+                return mnist_read.test.next_batch(FLAGS.batch_size, shuffle=False)
             train_images, train_labels = tf.py_func(train_func, [], [tf.float32, tf.uint8])
             train_images.set_shape([FLAGS.batch_size, 784])
             train_labels.set_shape([FLAGS.batch_size])
