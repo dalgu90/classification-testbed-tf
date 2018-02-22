@@ -177,7 +177,7 @@ def train():
         # Start queue runners & summary_writer
         tf.train.start_queue_runners(sess=sess)
         if not os.path.exists(FLAGS.train_dir):
-            os.mkdir(FLAGS.train_dir)
+            os.makedirs(FLAGS.train_dir)
         summary_writer = tf.summary.FileWriter(os.path.join(FLAGS.train_dir, str(global_step.eval(session=sess))),
                                                 sess.graph)
 
