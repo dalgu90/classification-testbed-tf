@@ -1,9 +1,9 @@
 #!/bin/sh
 export CUDA_VISIBLE_DEVICES=0
-train_dir="./lenet-mnist-scratch"
+train_dir="./lenet-5_mnist"
 
 python train.py --train_dir $train_dir \
-    --network "lenet-fc" \
+    --network "lenet-5" \
     --dataset "mnist" \
     --data_dir "data/mnist/" \
     --num_train_instance 60000 \
@@ -13,7 +13,7 @@ python train.py --train_dir $train_dir \
     --test_iter 100 \
     --fc_bias False \
     --l2_weight 0.0001 \
-    --initial_lr 0.1 \
+    --initial_lr 0.05 \
     --lr_step_epoch 100.0 \
     --lr_decay 0.1 \
     --max_steps 120000 \

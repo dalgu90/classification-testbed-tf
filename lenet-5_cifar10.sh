@@ -1,11 +1,11 @@
 #!/bin/sh
 export CUDA_VISIBLE_DEVICES=0
-train_dir="./lenet5-cifar10-scratch"
+train_dir="./lenet-5_cifar10"
 
 python train.py --train_dir $train_dir \
-    --network "lenet5" \
+    --network "lenet-5" \
     --dataset "cifar-10" \
-    --data_dir "data/cifar-10-binary/cifar-10-batches-bin/" \
+    --data_dir "data/cifar-10-binary/" \
     --num_classes 10 \
     --batch_size 500 \
     --test_interval 100 \
