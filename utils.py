@@ -33,8 +33,11 @@ def _relu(x, leakness=0.0, name=None):
 def _relu_group(inputs, leakness=0.0, name='relu_group'):
     outputs = []
     for i, x in enumerate(inputs):
-        relu = _relu(x, leakness, 'relu_%d'%(i+1))
-        outputs.append(relu)
+        if x is not None:
+            relu = _relu(x, leakness, 'relu_%d'%(i+1))
+            outputs.append(relu)
+        else:
+            outputs.append(None)
     return outputs
 
 def _conv(x, filter_size, out_channel, strides, pad='SAME', name='conv'):
@@ -82,3 +85,30 @@ def _dropout(x, keep_prob=1.0, name=None):
         return x
     else:
         return tf.nn.dropout(x, keep_prob, name=name)
+
+def _fc_with_init(x, out_dim, bias=True, init_w=None, init_b=None, trainable=True, name='fc'):
+    with tf.variable_scope(name):
+        # Main operation: fc
+        if init_w is not None:
+            initializer_w = tf.constant_initializer(init_w)
+        else:
+            initializer_w = tf.random_normal_initializer(stddev=np.sqrt(1.0/x.get_shape().as_list()[1]))
+
+        w = tf.get_variable('weights', [x.get_shape()[1], out_dim], tf.float32,
+                            initializer=initializer_w, trainable=trainable)
+        if trainable and (w not in tf.get_collection(WEIGHT_DECAY_KEY)):
+            tf.add_to_collection(WEIGHT_DECAY_KEY, w)
+
+        fc = tf.matmul(x, w)
+
+        if bias:
+            if init_b is not None:
+                initializer_b = tf.constant_initializer(init_b)
+            else:
+                initializer_b = tf.constant_initializer(0.0)
+
+            b = tf.get_variable('biases', [out_dim], tf.float32,
+                                initializer=initializer_b, trainable=trainable)
+            fc = tf.nn.bias_add(fc, b)
+
+    return fc
