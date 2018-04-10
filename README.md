@@ -15,6 +15,6 @@ $ python scripts/download_cifar.py --dataset cifar-100  # CIFAR-100
 ### Run
 
 ```
-$ ./lenet_mnist_scratch.sh
-$ ./lenet5_cifar10_scratch.sh
+$ ./lenet-fc_mnist.sh
+$ ./lenet-5_cifar10.sh
 ```
