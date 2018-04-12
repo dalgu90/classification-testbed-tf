@@ -20,7 +20,7 @@ tf.app.flags.DEFINE_integer('num_test_instance', 10000, """Number of test images
 
 # Network Configuration
 tf.app.flags.DEFINE_string('network', 'lenet-fc', """Network architecture""")
-tf.app.flags.DEFINE_boolean('fc_bias', False, """Whether to add bias after fc multiply""")
+tf.app.flags.DEFINE_boolean('fc_bias', True, """Whether to add bias after fc multiply""")
 tf.app.flags.DEFINE_integer('batch_size', 100, """Number of images to process in a batch.""")
 
 # Optimization Configuration

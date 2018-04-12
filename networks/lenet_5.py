@@ -42,7 +42,7 @@ class LeNet(Network):
             x = tf.reshape(x, [self._hp.batch_size, -1])
 
             # ip1 (fc)
-            x = self._fc(x, 500, name='fc1')
+            x = self._fc(x, 500, bias=self._hp.fc_bias, name='fc1')
             x = self._relu(x, name='relu1')
 
             # ip2 (fc, logit)
@@ -51,7 +51,7 @@ class LeNet(Network):
             self._logits = x
 
             # Probs & preds & acc
-            self.probs = tf.nn.softmax(x, name='probs')
+            self.probs = tf.nn.softmax(self._logits, name='probs')
             self.preds = tf.to_int32(tf.argmax(self._logits, 1, name='preds'))
             ones = tf.constant(np.ones([self._hp.batch_size]), dtype=tf.float32)
             zeros = tf.constant(np.zeros([self._hp.batch_size]), dtype=tf.float32)
@@ -60,7 +60,7 @@ class LeNet(Network):
             tf.summary.scalar('accuracy', self.acc)
 
             # Loss & acc
-            loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=x, labels=self._labels)
+            loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self._logits, labels=self._labels)
             self.loss = tf.reduce_mean(loss)
             tf.summary.scalar('cross_entropy', self.loss)
 
