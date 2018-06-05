@@ -2,7 +2,7 @@ import os
 import sys
 import random
 import tarfile
-import cPickle as pickle
+import pickle
 import numpy as np
 import argparse
 
@@ -26,13 +26,13 @@ if 'cifar-100' == args.dataset:
     dataset_fsize = 169001437
 
 def download_file(url, path):
-    import urllib2
+    import urllib.request
     file_name = url.split('/')[-1]
-    u = urllib2.urlopen(url)
+    u = urllib.request.urlopen(url)
     f = open(os.path.join(path, file_name), 'wb')
     meta = u.info()
-    file_size = int(meta.getheaders("Content-Length")[0])
-    print "Downloading: %s Bytes: %s" % (file_name, file_size)
+    file_size = int(meta.get_all("Content-Length")[0])
+    print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
     download_size = 0
     block_size = 8192
@@ -43,9 +43,9 @@ def download_file(url, path):
         download_size += len(buf)
         f.write(buf)
         status = "\r%12d  [%3.2f%%]" % (download_size, download_size * 100. / file_size)
-        print status,
+        print(status, end="")
         sys.stdout.flush()
-    print ""
+    print("")
     f.close()
 
 if not os.path.exists(dataset_dpath):
@@ -58,7 +58,7 @@ if not os.path.exists(tar_fpath) or os.path.getsize(tar_fpath) != dataset_fsize:
     print('Extracting %s' % dataset_name)
     with tarfile.open(tar_fpath) as tar:
         tar.extractall(path=dataset_dpath)
-    print 'done'
+    print('done')
 else:
     print('%s  exists\nNothing to be done... Quit!' % dataset_name)
     sys.exit(0)

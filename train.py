@@ -3,6 +3,7 @@
 import os
 from datetime import datetime
 import time
+from six.moves import xrange
 
 import tensorflow as tf
 import numpy as np
