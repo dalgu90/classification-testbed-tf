@@ -30,8 +30,7 @@ def LRN_scheduler(hParams, FLAGS, epoch):
 def record_dataset(filenames):
     """Returns an input pipeline Dataset from `filenames`."""
     record_bytes = HEIGHT * WIDTH * DEPTH + 1
-    # return tf.data.FixedLengthRecordDataset(filenames, record_bytes)
-    return tf.contrib.data.FixedLengthRecordDataset(filenames, record_bytes)
+    return tf.data.FixedLengthRecordDataset(filenames, record_bytes)
 
 def get_filenames(data_dir, train_mode):
     """Returns a list of filenames based on 'mode'."""
@@ -52,47 +51,45 @@ def dataset_parser(value):
 
     depth_major = tf.reshape(raw_record[label_bytes:record_bytes],
                            [DEPTH, HEIGHT, WIDTH])
-    image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32)
+    image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32) / 255.0
     return image, label
     # return image, tf.one_hot(label, NUM_CLASSES)
 
 def train_preprocess_fn(image, label):
-    image = tf.image.resize_images(image, [NEW_HEIGHT+4, NEW_WIDTH+4])
+    image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+2, NEW_WIDTH+2)
     image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, DEPTH])
-    image = tf.image.random_flip_left_right(image)
+    # image = tf.image.random_flip_left_right(image)
+    # image = tf.image.per_image_standardization(image)
     return image, label
 
 def test_preprocess_fn(image, label):
-    image = tf.image.resize_images(image, [NEW_HEIGHT+4, NEW_WIDTH+4])
-    image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, DEPTH])
+    # image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
+    # image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, DEPTH])
+    # image = tf.image.per_image_standardization(image)
     return image, label
 
 def input_fn(dataset, batch_size, train_mode, num_threads=4):
     dataset = record_dataset(get_filenames(dataset, train_mode))
     dataset = dataset.repeat()
-
-    dataset = dataset.map(dataset_parser, num_threads=num_threads,
-                        output_buffer_size=3*batch_size)
+    dataset = dataset.map(dataset_parser, num_parallel_calls=num_threads)
 
     if train_mode:
-        dataset = dataset.map(train_preprocess_fn, num_threads=num_threads,
-                              output_buffer_size=3*batch_size)
+        buffer_size = int(60000 * 0.4) + 3 * batch_size
+        dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size))
+        dataset = dataset.apply(tf.contrib.data.map_and_batch(train_preprocess_fn, batch_size))
     else:
-        dataset = dataset.map(test_preprocess_fn, num_threads=num_threads,
-                                output_buffer_size=3*batch_size)
-    buffer_size = int(50000 * 0.4) + 3 * batch_size
-    if train_mode:
-        dataset = dataset.shuffle(buffer_size=buffer_size)
+        dataset = dataset.repeat()
+        dataset = dataset.apply(tf.contrib.data.map_and_batch(test_preprocess_fn, batch_size))
 
-    dataset = dataset.map(
-      lambda image, label: (tf.image.per_image_standardization(image), label),
-      num_threads=num_threads,
-      output_buffer_size=3*batch_size)
-
-    # iterator = dataset.batch(batch_size).make_one_shot_iterator()
-    # Make sure that the number of data is divisible by batch_size
-    dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size))
+    # check TF version >= 1.8
+    ver = tf.__version__
+    if float(ver[:ver.rfind('.')]) >= 1.8:
+        dataset = dataset.apply(tf.contrib.data.prefetch_to_device('/GPU:0'))
+    else:
+        dataset = dataset.prefetch(10)
     iterator = dataset.make_one_shot_iterator()
     images, labels = iterator.get_next()
+    images.set_shape((batch_size, NEW_WIDTH, NEW_HEIGHT, DEPTH))
+    labels.set_shape((batch_size, ))
 
     return images, labels

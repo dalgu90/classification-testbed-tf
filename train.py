@@ -114,7 +114,6 @@ def train():
             test_labels.set_shape([FLAGS.batch_size])
             test_labels = tf.cast(test_labels, tf.int32)
         elif 'mnist-aug'==FLAGS.dataset:
-            # When using mnist(not mnist_input), make sure that batch_size is a divisor of 10000
             with tf.device('/CPU:0'):
                 with tf.variable_scope('train_image'):
                     train_images, train_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=True)

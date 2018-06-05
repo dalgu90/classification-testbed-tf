@@ -89,7 +89,12 @@ def input_fn(dataset, batch_size, train_mode, num_threads=8):
         dataset = dataset.repeat()
         dataset = dataset.apply(tf.contrib.data.map_and_batch(test_preprocess_fn, batch_size))
 
-    dataset = dataset.prefetch(3)
+    # check TF version >= 1.8
+    ver = tf.__version__
+    if float(ver[:ver.rfind('.')]) >= 1.8:
+        dataset = dataset.apply(tf.contrib.data.prefetch_to_device('/GPU:0'))
+    else:
+        dataset = dataset.prefetch(10)
     iterator = dataset.make_one_shot_iterator()
     images, labels = iterator.get_next()
     images.set_shape((batch_size, NEW_WIDTH, NEW_HEIGHT, DEPTH))

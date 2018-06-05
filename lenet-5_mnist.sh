@@ -4,7 +4,7 @@ train_dir="./lenet-5_mnist"
 
 python train.py --train_dir $train_dir \
     --network "lenet-5" \
-    --dataset "mnist" \
+    --dataset "mnist-aug" \
     --data_dir "data/mnist/" \
     --num_train_instance 60000 \
     --num_classes 10 \

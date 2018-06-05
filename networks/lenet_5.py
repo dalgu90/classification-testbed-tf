@@ -21,6 +21,7 @@ class LeNet(Network):
         with tf.name_scope(self._name+('' if self._name.endswith('/') else '/')):
             x = self._images
             if len(x.get_shape()) == 2:
+                from functools import reduce
                 from operator import mul
                 data_len = reduce(mul, x.get_shape()[1:].as_list())
                 if data_len == 784:
