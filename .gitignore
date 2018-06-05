@@ -59,7 +59,7 @@ data/mnist/*
 # Training & evaluation shell files
 *.sh
 lenet-fc_mnist
-lenet-5-mnist
+lenet-5_mnist
 lenet-fc_cifar10
 lenet-5_cifar10
 lenet-5_cifar100
