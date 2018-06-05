@@ -52,7 +52,7 @@ def train_preprocess_fn(image, label):
     return image, label
 
 def test_preprocess_fn(image, label):
-    # image = tf.image.resize_images(image, [NEW_HEIGHT+4, NEW_WIDTH+4])
+    # image = tf.image.resize_images_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
     # image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
     # image = tf.image.per_image_standardization(image)
     image = (tf.cast(image, tf.float32) - cifar100_mean) / cifar100_std
