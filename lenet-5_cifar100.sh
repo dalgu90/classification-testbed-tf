@@ -1,5 +1,5 @@
 #!/bin/sh
-export CUDA_VISIBLE_DEVICES=4
+export CUDA_VISIBLE_DEVICES=0
 train_dir="./lenet-5_cifar100"
 
 python train.py --train_dir $train_dir \
@@ -7,6 +7,8 @@ python train.py --train_dir $train_dir \
     --dataset "cifar-100" \
     --data_dir "data/cifar-100-binary/" \
     --num_classes 100 \
+    --num_train_instance 50000 \
+    --num_test_instance 10000 \
     --batch_size 500 \
     --test_interval 100 \
     --test_iter 20 \

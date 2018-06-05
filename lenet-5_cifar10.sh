@@ -7,6 +7,8 @@ python train.py --train_dir $train_dir \
     --dataset "cifar-10" \
     --data_dir "data/cifar-10-binary/" \
     --num_classes 10 \
+    --num_train_instance 50000 \
+    --num_test_instance 10000 \
     --batch_size 500 \
     --test_interval 100 \
     --test_iter 20 \

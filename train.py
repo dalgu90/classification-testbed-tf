@@ -149,8 +149,8 @@ def train():
             network_test.build_model()
 
         # Learning rate decay
-        lr_decay_steps = map(float,FLAGS.lr_step_epoch.split(','))
-        lr_decay_steps = map(int,[s*FLAGS.num_train_instance/FLAGS.batch_size for s in lr_decay_steps])
+        lr_decay_steps = [float(s) for s in FLAGS.lr_step_epoch.split(',')]
+        lr_decay_steps = [int(f) for f in [s*FLAGS.num_train_instance/FLAGS.batch_size for s in lr_decay_steps]]
         def get_lr(initial_lr, lr_decay, lr_decay_steps, global_step):
             lr = initial_lr
             for s in lr_decay_steps:
