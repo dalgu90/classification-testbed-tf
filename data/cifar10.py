@@ -15,6 +15,10 @@ DEPTH = 3
 NEW_HEIGHT = 32
 NEW_WIDTH = 32
 
+cifar10_mean = [125.3, 123.0, 113.9]
+cifar10_std = [63.0, 62.1, 66.7]
+
+
 def LRN_scheduler(hParams, FLAGS, epoch):
     if (epoch < 0.5*FLAGS.n_epochs):
         lrn_rate = hParams.lrn_rate
@@ -58,16 +62,18 @@ def dataset_parser(value):
     # return image, tf.one_hot(label, NUM_CLASSES)
 
 def train_preprocess_fn(image, label):
-    image = tf.image.resize_images(image, [NEW_HEIGHT+4, NEW_WIDTH+4])
+    image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
     image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
     image = tf.image.random_flip_left_right(image)
-    image = tf.image.per_image_standardization(image)
+    # image = tf.image.per_image_standardization(image)
+    image = (tf.cast(image, tf.float32) - cifar10_mean) / cifar10_std
     return image, label
 
 def test_preprocess_fn(image, label):
-    image = tf.image.resize_images(image, [NEW_HEIGHT+4, NEW_WIDTH+4])
-    image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
-    image = tf.image.per_image_standardization(image)
+    # image = tf.image.resize_images(image, [NEW_HEIGHT+4, NEW_WIDTH+4])
+    # image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
+    # image = tf.image.per_image_standardization(image)
+    image = (tf.cast(image, tf.float32) - cifar10_mean) / cifar10_std
     return image, label
 
 def input_fn(dataset, batch_size, train_mode, num_threads=8):
