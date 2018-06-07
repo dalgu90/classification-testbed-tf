@@ -1,9 +1,8 @@
+from __future__ import print_function
 import os
 import sys
-import random
 import gzip
-import cPickle as pickle
-import numpy as np
+import codecs
 
 # Parameters
 dataset_base_url = 'http://yann.lecun.com/exdb/mnist/'
@@ -16,14 +15,22 @@ dataset_outputs = ['train.bin', 'test.bin']
 dataset_fsizes = [9912422, 28881, 1648877, 4542]
 
 def download_file(url, path):
-    import urllib2
     file_name = url.split('/')[-1]
-    u = urllib2.urlopen(url)
-    f = open(os.path.join(path, file_name), 'wb')
-    meta = u.info()
-    file_size = int(meta.getheaders("Content-Length")[0])
-    print "Downloading: %s Bytes: %s" % (file_name, file_size)
+    try:
+        # For Python 3.0 and later
+        from urllib.request import urlopen
+        u = urlopen(url)
+        meta = u.info()
+        file_size = int(meta.get_all("Content-Length")[0])
+    except ImportError:
+        # Fall back to Python 2's urllib2
+        from urllib2 import urlopen
+        u = urlopen(url)
+        meta = u.info()
+        file_size = int(meta.getheaders("Content-Length")[0])
+    print("Downloading: %s Bytes: %s" % (file_name, file_size))
 
+    f = open(os.path.join(path, file_name), 'wb')
     download_size = 0
     block_size = 8192
     while True:
@@ -33,9 +40,9 @@ def download_file(url, path):
         download_size += len(buf)
         f.write(buf)
         status = "\r%12d  [%3.2f%%]" % (download_size, download_size * 100. / file_size)
-        print status,
+        print(status, end='')
         sys.stdout.flush()
-    print ""
+    print("")
     f.close()
 
 if not os.path.exists(dataset_dpath):
@@ -53,7 +60,7 @@ if download_cnt == 0:
     print('MNIST original dataset exists')
 
 def byte_to_int(bstr):
-    return int(bstr.encode('hex'), 16)
+    return int(codecs.encode(bstr, 'hex'), 16)
 
 generate_cnt = 0
 for i, output_fname in enumerate(dataset_outputs):
@@ -67,9 +74,9 @@ for i, output_fname in enumerate(dataset_outputs):
             label = infile.read()
         num_data = byte_to_int(image[4:8])
         print('%d images' % num_data)
-        data = ""
+        data = bytearray()
         for j in range(num_data):
-            data += label[8+j]
+            data += label[8+j:9+j]
             data += image[16+j*28*28:16+(j+1)*28*28]
         with open(output_fpath, 'wb') as fd:
             fd.write(data)
