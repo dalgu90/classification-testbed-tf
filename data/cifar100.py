@@ -29,20 +29,6 @@ def get_filename(data_dir, train_mode):
     else:
         return os.path.join(data_dir, 'test.bin')
 
-def dataset_parser(value):
-    label_bytes = 1
-    image_bytes = HEIGHT * WIDTH * DEPTH
-    record_bytes = label_bytes + image_bytes
-
-    raw_record = tf.decode_raw(value, tf.uint8)
-    label = tf.cast(raw_record[0], tf.int32)
-
-    depth_major = tf.reshape(raw_record[label_bytes:record_bytes],
-                           [DEPTH, HEIGHT, WIDTH])
-    image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32)
-    return image, label
-    # return image, tf.one_hot(label, NUM_CLASSES)
-
 def train_preprocess_fn(image, label):
     image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
     image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])

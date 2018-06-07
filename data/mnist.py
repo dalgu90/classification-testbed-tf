@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 import os
 
@@ -16,44 +17,15 @@ DEPTH = 1
 NEW_HEIGHT = 28
 NEW_WIDTH = 28
 
-def LRN_scheduler(hParams, FLAGS, epoch):
-    if (epoch < 0.5*FLAGS.n_epochs):
-        lrn_rate = hParams.lrn_rate
-    elif (epoch < 0.8*FLAGS.n_epochs):
-        lrn_rate = hParams.lrn_rate * 1e-1
-    elif (epoch < 1.0*FLAGS.n_epochs):
-        lrn_rate = hParams.lrn_rate * 1e-2
-    else:
-        lrn_rate = hParams.lrn_rate * 1e-3
-    return lrn_rate
 
-def record_dataset(filenames):
-    """Returns an input pipeline Dataset from `filenames`."""
-    record_bytes = HEIGHT * WIDTH * DEPTH + 1
-    return tf.data.FixedLengthRecordDataset(filenames, record_bytes)
-
-def get_filenames(data_dir, train_mode):
+def get_filename(data_dir, train_mode):
     """Returns a list of filenames based on 'mode'."""
     data_dir = os.path.join(data_dir)
 
     if train_mode:
-        return [os.path.join(data_dir, 'train.bin')]
+        return os.path.join(data_dir, 'train.bin')
     else:
-        return [os.path.join(data_dir, 'test.bin')]
-
-def dataset_parser(value):
-    label_bytes = 1
-    image_bytes = HEIGHT * WIDTH * DEPTH
-    record_bytes = label_bytes + image_bytes
-
-    raw_record = tf.decode_raw(value, tf.uint8)
-    label = tf.cast(raw_record[0], tf.int32)
-
-    depth_major = tf.reshape(raw_record[label_bytes:record_bytes],
-                           [DEPTH, HEIGHT, WIDTH])
-    image = tf.cast(tf.transpose(depth_major, [1, 2, 0]), tf.float32) / 255.0
-    return image, label
-    # return image, tf.one_hot(label, NUM_CLASSES)
+        return os.path.join(data_dir, 'test.bin')
 
 def train_preprocess_fn(image, label):
     image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+2, NEW_WIDTH+2)
@@ -68,10 +40,25 @@ def test_preprocess_fn(image, label):
     # image = tf.image.per_image_standardization(image)
     return image, label
 
-def input_fn(dataset, batch_size, train_mode, num_threads=4):
-    dataset = record_dataset(get_filenames(dataset, train_mode))
-    dataset = dataset.repeat()
-    dataset = dataset.map(dataset_parser, num_parallel_calls=num_threads)
+def read_bin_file(bin_fpath):
+    """ Read MNIST .bin file returns images and labels """
+    with open(bin_fpath, 'rb') as fd:
+        bstr = fd.read()
+
+    label_byte = 1
+    image_byte = HEIGHT * WIDTH * DEPTH
+
+    array = np.frombuffer(bstr, dtype=np.uint8).reshape((-1, label_byte + image_byte))
+    labels = array[:,:label_byte].flatten().astype(np.int32)
+    images = array[:,label_byte:].reshape((-1, DEPTH, HEIGHT, WIDTH)).transpose((0, 2, 3, 1))
+
+    return images, labels
+
+def input_fn(data_dir, batch_size, train_mode, num_threads=8):
+    # Read MNIST dataset
+    images_arr, labels_arr = read_bin_file(get_filename(data_dir, train_mode))
+    images_arr = images_arr.astype(np.float32) / 255.0
+    dataset = tf.data.Dataset.from_tensor_slices((images_arr, labels_arr))
 
     if train_mode:
         buffer_size = int(60000 * 0.4) + 3 * batch_size

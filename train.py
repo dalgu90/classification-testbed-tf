@@ -9,7 +9,7 @@ import tensorflow as tf
 import numpy as np
 
 import tensorflow.examples.tutorials.mnist.input_data as input_data
-from data import cifar10_input, cifar100_input, mnist_input, cifar10, cifar100, mnist
+from data import cifar10, cifar100, mnist
 from networks import lenet_fc, lenet_5
 
 # Dataset Configuration
@@ -82,21 +82,16 @@ def train():
 
         # Get images and labels
         if 'cifar-10'==FLAGS.dataset:
-            # When using cifar10(not cifar10_input), make sure that batch_size is a divisor of 10000
             with tf.device('/CPU:0'):
                 with tf.variable_scope('train_image'):
-                    # train_images, train_labels = cifar10_input.distorted_inputs(FLAGS.data_dir, FLAGS.batch_size)
                     train_images, train_labels = cifar10.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=True)
                 with tf.variable_scope('test_image'):
-                    # test_images, test_labels = cifar10_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
                     test_images, test_labels = cifar10.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=False)
         elif 'cifar-100'==FLAGS.dataset:
             with tf.device('/CPU:0'):
                 with tf.variable_scope('train_image'):
-                    # train_images, train_labels = cifar100_input.distorted_inputs(FLAGS.data_dir, FLAGS.batch_size)
                     train_images, train_labels = cifar100.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=True)
                 with tf.variable_scope('test_image'):
-                    # test_images, test_labels = cifar100_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
                     test_images, test_labels = cifar100.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=False)
         elif 'mnist'==FLAGS.dataset:
             # Tensorflow default dataset
@@ -117,10 +112,8 @@ def train():
             with tf.device('/CPU:0'):
                 with tf.variable_scope('train_image'):
                     train_images, train_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=True)
-                    # train_images, train_labels = mnist_input.distorted_inputs(FLAGS.data_dir, FLAGS.batch_size)
                 with tf.variable_scope('test_image'):
                     test_images, test_labels = mnist.input_fn(FLAGS.data_dir, FLAGS.batch_size, train_mode=False)
-                    # test_images, test_labels = mnist_input.inputs(True, FLAGS.data_dir, FLAGS.batch_size)
 
 
         # Build model
