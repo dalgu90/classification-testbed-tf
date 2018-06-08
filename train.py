@@ -173,8 +173,7 @@ def train():
         tf.train.start_queue_runners(sess=sess)
         if not os.path.exists(FLAGS.train_dir):
             os.makedirs(FLAGS.train_dir)
-        summary_writer = tf.summary.FileWriter(os.path.join(FLAGS.train_dir, str(global_step.eval(session=sess))),
-                                                sess.graph)
+        summary_writer = tf.summary.FileWriter(os.path.join(FLAGS.train_dir, str(global_step.eval(session=sess))))
 
         # Training!
         test_best_acc = 0.0
@@ -224,7 +223,7 @@ def train():
             # Save the model checkpoint periodically.
             if (step > init_step and step % FLAGS.checkpoint_interval == 0) or (step + 1) == FLAGS.max_steps:
                 checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
-                saver.save(sess, checkpoint_path, global_step=step)
+                saver.save(sess, checkpoint_path, global_step=step, write_meta_graph=False)
 
 
 def main(argv=None):  # pylint: disable=unused-argument

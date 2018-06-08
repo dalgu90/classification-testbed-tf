@@ -37,14 +37,14 @@ def train_preprocess_fn(image, label):
     image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
     image = tf.image.random_flip_left_right(image)
     # image = tf.image.per_image_standardization(image)
-    image = (tf.cast(image, tf.float32) - cifar10_mean) / cifar10_std
+    image = (image - cifar10_mean) / cifar10_std
     return image, label
 
 def test_preprocess_fn(image, label):
     # image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
     # image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
     # image = tf.image.per_image_standardization(image)
-    image = (tf.cast(image, tf.float32) - cifar10_mean) / cifar10_std
+    image = (image - cifar10_mean) / cifar10_std
     return image, label
 
 def read_bin_file(bin_fpath):
@@ -64,7 +64,7 @@ def read_bin_file(bin_fpath):
 def input_fn(data_dir, batch_size, train_mode, num_threads=8):
     # Read CIFAR-10 dataset
     images_list, labels_list = zip(*[read_bin_file(bin_fpath) for bin_fpath in get_filenames(data_dir, train_mode)])
-    images = np.concatenate(images_list)
+    images = np.concatenate(images_list).astype(np.float32)
     labels = np.concatenate(labels_list)
     dataset = tf.data.Dataset.from_tensor_slices((images, labels))
 
