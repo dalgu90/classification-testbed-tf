@@ -6,19 +6,19 @@ import tensorflow as tf
 WEIGHT_DECAY_KEY = 'WEIGHT_DECAY'
 GATING_KEY = 'GATING'
 
-def _fc(x, out_dim, bias=True, name='fc'):
+def _fc(x, out_dim, bias=True, trainable=True, name='fc'):
     with tf.variable_scope(name):
         # Main operation: fc
         w = tf.get_variable('weights', [x.get_shape()[1], out_dim],
                         tf.float32, initializer=tf.random_normal_initializer(
-                            stddev=np.sqrt(1.0/x.get_shape().as_list()[1])))
-        if w not in tf.get_collection(WEIGHT_DECAY_KEY):
+                            stddev=np.sqrt(1.0/x.get_shape().as_list()[1])), trainable=trainable)
+        if w not in tf.get_collection(WEIGHT_DECAY_KEY) and trainable:
             tf.add_to_collection(WEIGHT_DECAY_KEY, w)
         if not bias:
             fc = tf.matmul(x, w)
         else:
             b = tf.get_variable('biases', [out_dim], tf.float32,
-                                initializer=tf.constant_initializer(0.0))
+                                initializer=tf.constant_initializer(0.0), trainable=trainable)
             fc = tf.nn.bias_add(tf.matmul(x, w), b)
     return fc
 
@@ -40,19 +40,38 @@ def _relu_group(inputs, leakness=0.0, name='relu_group'):
             outputs.append(None)
     return outputs
 
-def _conv(x, filter_size, out_channel, strides, pad='SAME', name='conv'):
+def _conv(x, filter_size, out_channel, strides, pad='SAME', trainable=True, name='conv'):
     in_shape = x.get_shape().as_list()
     with tf.variable_scope(name):
         # Main operation: conv2d
         kernel = tf.get_variable('kernel', [filter_size, filter_size, in_shape[3], out_channel],
                         tf.float32, initializer=tf.random_normal_initializer(
-                            stddev=np.sqrt(1.0/filter_size/filter_size/in_shape[3])))
-        if kernel not in tf.get_collection(WEIGHT_DECAY_KEY):
+                            stddev=np.sqrt(1.0/filter_size/filter_size/in_shape[3])), trainable=trainable)
+        if kernel not in tf.get_collection(WEIGHT_DECAY_KEY) and trainable:
             tf.add_to_collection(WEIGHT_DECAY_KEY, kernel)
         conv = tf.nn.conv2d(x, kernel, [1, strides, strides, 1], pad)
     return conv
 
-def _bn(x, is_train, global_step=None, name='bn', no_scale=False):
+def _deconv(x, filter_size, out_channel, strides, pad='SAME', trainable=True, name='deconv'):
+    in_shape = x.get_shape().as_list()
+    with tf.variable_scope(name):
+        # Main operation: conv2d_transpose
+        kernel = tf.get_variable('kernel', [filter_size, filter_size, out_channel, in_shape[3]],
+                                 tf.float32, initializer=tf.random_normal_initializer(
+                                 stddev=np.sqrt(1.0/filter_size/filter_size/in_shape[3])), trainable=trainable)
+        if kernel not in tf.get_collection(WEIGHT_DECAY_KEY) and trainable:
+            tf.add_to_collection(WEIGHT_DECAY_KEY, kernel)
+        if 'VALID' == pad:
+            h = in_shape[1] * strides + filter_size - strides
+            w = in_shape[2] * strides + filter_size - strides
+        elif 'SAME' == pad:
+            h = in_shape[1] * strides
+            w = in_shape[2] * strides
+        deconv = tf.nn.conv2d_transpose(x, kernel, [in_shape[0], w, h, out_channel],
+                                        [1, strides, strides, 1], pad)
+    return deconv
+
+def _bn(x, is_train, name='bn', no_scale=False):
     moving_average_decay = 0.9
     with tf.variable_scope(name):
         decay = moving_average_decay
@@ -112,3 +131,71 @@ def _fc_with_init(x, out_dim, bias=True, init_w=None, init_b=None, trainable=Tru
             fc = tf.nn.bias_add(fc, b)
 
     return fc
+
+def _concrete_dropout(prob, temp=1e-1, name='cdropout'):
+    with tf.variable_scope(name):
+        u = tf.random_uniform(prob.get_shape(), 0, 1)
+        logit = 1.0 / temp * (tf.log(prob+eps) - tf.log(1.0-prob+eps) + tf.log(u+eps) - tf.log(1.0-u+eps))
+        z = tf.sigmoid(logit)
+    return z
+
+def _gumbel_softmax(logits, temp=1e-1, name='gsoftmax'):
+    with tf.variable_scope(name):
+        u = tf.random_uniform(logits.get_shape(), 0, 1)
+        g = -tf.log(-tf.log(u))
+        y = tf.nn.softmax((logits + g) / temp)
+    return y
+
+def _get_name_scope():
+    return tf.contrib.framework.get_name_scope()
+
+def print_all_vars(sess):
+    all_vars = tf.global_variables()
+
+    print('%s|%s|%s|%s' % ('Name'.center(35, ' '), 'Shape'.center(20, ' '), 'Mean'.center(12, ' '), 'Std var'.center(12, ' ')))
+    print('-'*35+'+'+'-'*20+'+'+'-'*12+'+'+'-'*12)
+
+    for v in all_vars:
+        if not v.op.name.endswith('Momentum'):
+            var_val = sess.run(v)
+            mean = np.average(var_val)
+            std = np.std(var_val)
+            print('%-35s|%20s|%12s|%12s' % (v.op.name, str(v.get_shape().as_list()), '%.4f'%mean, '%.4f'%std))
+
+def save_embedding_projector(projector_dir, embeddings, labels, images_sprites, image_dim):
+    metadata_fname = 'metadata.tsv'
+    image_fname = 'sprite.png'
+    ckpt_fname = 'model.ckpt'
+
+    if not os.path.exists(projector_dir):
+        os.makedirs(projector_dir)
+
+    # Save labels
+    with open(os.path.join(projector_dir, metadata_fname), 'w') as fd:
+        fd.write(''.join(['%d\n' % l for l in labels]))
+
+    # Save images
+    imsave(os.path.join(projector_dir, image_fname), images_sprites)
+
+    # Save embeddings inside new graph scope
+    with tf.Graph().as_default() as g:
+        sess = tf.InteractiveSession(graph=g)
+
+        embed_var = tf.Variable(embeddings, trainable=False, name='embedding')
+        sess.run(tf.initialize_variables([embed_var]))
+
+        writer = tf.summary.FileWriter(projector_dir, sess.graph)
+
+        # Projector
+        config = projector.ProjectorConfig()
+        embed = config.embeddings.add()
+        embed.tensor_name = 'embedding:0'
+        embed.metadata_path = metadata_fname
+        embed.sprite.image_path = image_fname
+        embed.sprite.single_image_dim.extend(image_dim)
+        projector.visualize_embeddings(writer, config)
+
+        saver = tf.train.Saver([embed_var])
+        saver.save(sess, os.path.join(projector_dir, ckpt_fname), global_step=0)
+
+        sess.close()

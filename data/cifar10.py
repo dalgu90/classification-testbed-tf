@@ -1,13 +1,11 @@
 import tensorflow as tf
 import numpy as np
 import os
+from functools import partial
 
 NUM_CLASSES = 10
-INIT_LRN_RATE = 1e-2
-MIN_LRN_RATE = 1e-4
-WEIGHT_DECAY_RATE = 1e-4
-RELU_LEAKINESS = 0.1
 NUM_TRAIN_IMAGES = 50000
+NUM_TEST_IMAGES = 10000
 
 HEIGHT = 32
 WIDTH = 32
@@ -32,19 +30,22 @@ def get_filenames(data_dir, train_mode):
     else:
         return [os.path.join(data_dir, 'test_batch.bin')]
 
-def train_preprocess_fn(image, label):
-    image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
-    image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
-    image = tf.image.random_flip_left_right(image)
+def train_preprocess_fn(image, label, augment):
+    if augment:
+        image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
+        image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
+        image = tf.image.random_flip_left_right(image)
     # image = tf.image.per_image_standardization(image)
-    image = (image - cifar10_mean) / cifar10_std
+    # image = (image - cifar10_mean) / cifar10_std
     return image, label
 
-def test_preprocess_fn(image, label):
-    # image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
-    # image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
+def test_preprocess_fn(image, label, augment):
+    if augment:
+        image = tf.image.resize_image_with_crop_or_pad(image, NEW_HEIGHT+4, NEW_WIDTH+4)
+        image = tf.random_crop(image, [NEW_HEIGHT, NEW_WIDTH, 3])
+        image = tf.image.random_flip_left_right(image)
     # image = tf.image.per_image_standardization(image)
-    image = (image - cifar10_mean) / cifar10_std
+    # image = (image - cifar10_mean) / cifar10_std
     return image, label
 
 def read_bin_file(bin_fpath):
@@ -61,20 +62,27 @@ def read_bin_file(bin_fpath):
 
     return images, labels
 
-def input_fn(data_dir, batch_size, train_mode, num_threads=8):
+def input_fn(data_dir, batch_size, train_mode, augment=None, num_threads=8):
     # Read CIFAR-10 dataset
     images_list, labels_list = zip(*[read_bin_file(bin_fpath) for bin_fpath in get_filenames(data_dir, train_mode)])
-    images = np.concatenate(images_list).astype(np.float32)
+    images = np.concatenate(images_list)
+    images = (images - cifar10_mean)/cifar10_std
+    images = images.astype(np.float32)
     labels = np.concatenate(labels_list)
     dataset = tf.data.Dataset.from_tensor_slices((images, labels))
 
+    if augment is None:
+        augment = train_mode
+
     if train_mode:
-        buffer_size = int(50000 * 0.4) + 3 * batch_size
+        buffer_size = int(60000 * 0.4) + 3 * batch_size
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size))
-        dataset = dataset.apply(tf.contrib.data.map_and_batch(train_preprocess_fn, batch_size, num_threads))
+        dataset = dataset.apply(tf.contrib.data.map_and_batch(partial(train_preprocess_fn, augment=augment),
+                                                              batch_size, num_threads))
     else:
         dataset = dataset.repeat()
-        dataset = dataset.apply(tf.contrib.data.map_and_batch(test_preprocess_fn, batch_size, num_threads))
+        dataset = dataset.apply(tf.contrib.data.map_and_batch(partial(test_preprocess_fn, augment=augment),
+                                                              batch_size, num_threads))
 
     # check TF version >= 1.8
     ver = tf.__version__
