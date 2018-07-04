@@ -56,8 +56,8 @@ class Network(object):
         print('%s: %s' % (utils._get_name_scope()+'/'+name, str(x.get_shape().as_list())))
         return x
 
-    def _bn(self, x, trainable=True, name="bn", no_scale=False):
-        x = utils._bn(x, self.is_train, self._global_step, trainable, name, no_scale=no_scale)
+    def _bn(self, x, no_scale=False, trainable=True, name="bn"):
+        x = utils._bn(x, self.is_train, no_scale, trainable, name)
         print('%s: %s' % (utils._get_name_scope()+'/'+name, str(x.get_shape().as_list())))
         return x
 

@@ -10,7 +10,7 @@ import numpy as np
 
 import tensorflow.examples.tutorials.mnist.input_data as input_data
 from data import cifar10, cifar100, mnist
-from networks import lenet_fc, lenet_5
+from networks import lenet_fc, lenet_5, vgg_16
 
 # Dataset Configuration
 tf.app.flags.DEFINE_string('dataset', 'mnist', """Dataset type.""")
@@ -121,6 +121,8 @@ def train():
             network = lenet_fc
         elif 'lenet-5'==FLAGS.network:
             network = lenet_5
+        elif 'vgg-16'==FLAGS.network:
+            network = vgg_16
 
         # 1) Training Network
         hp = network.HParams(batch_size=FLAGS.batch_size,
@@ -131,6 +133,9 @@ def train():
         network_train = network.LeNet(hp, train_images, train_labels, global_step, name='train')
         network_train.build_model()
         network_train.build_train_op()
+
+        print('FLOPs: %d' % network_train._flops)
+        print('Weigths: %d' % network_train._weights)
 
         train_summary_op = tf.summary.merge_all()  # Summaries(training)
 

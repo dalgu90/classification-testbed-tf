@@ -71,19 +71,19 @@ def _deconv(x, filter_size, out_channel, strides, pad='SAME', trainable=True, na
                                         [1, strides, strides, 1], pad)
     return deconv
 
-def _bn(x, is_train, name='bn', no_scale=False):
+def _bn(x, is_train, no_scale=False, trainable=True, name='bn'):
     moving_average_decay = 0.9
     with tf.variable_scope(name):
         decay = moving_average_decay
-        batch_mean, batch_var = tf.nn.moments(x, [0, 1, 2])
+        batch_mean, batch_var = tf.nn.moments(x, list(range(len(x.get_shape().as_list())-1)))  # [0, 1, 2] for conv, [0] for fc
         mu = tf.get_variable('mu', batch_mean.get_shape(), tf.float32,
                         initializer=tf.zeros_initializer(), trainable=False)
         sigma = tf.get_variable('sigma', batch_var.get_shape(), tf.float32,
                         initializer=tf.ones_initializer(), trainable=False)
         beta = tf.get_variable('beta', batch_mean.get_shape(), tf.float32,
-                        initializer=tf.zeros_initializer())
+                        initializer=tf.zeros_initializer(), trainable=(trainable))
         gamma = tf.get_variable('gamma', batch_var.get_shape(), tf.float32,
-                        initializer=tf.ones_initializer(), trainable=(not no_scale))
+                        initializer=tf.ones_initializer(), trainable=(trainable and (not no_scale)))
         # BN when training
         update = 1.0 - decay
         # with tf.control_dependencies([tf.Print(decay, [decay])]):
