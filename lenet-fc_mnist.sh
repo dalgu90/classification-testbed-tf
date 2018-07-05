@@ -1,6 +1,6 @@
 #!/bin/sh
 export CUDA_VISIBLE_DEVICES=0
-train_dir="./lenet-fc_mnist"
+train_dir="./results/lenet-fc_mnist"
 
 python train.py --train_dir $train_dir \
     --network "lenet-fc" \

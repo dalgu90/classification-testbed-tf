@@ -1,6 +1,6 @@
 #!/bin/sh
 export CUDA_VISIBLE_DEVICES=0
-train_dir="./lenet-5_cifar10"
+train_dir="./results/lenet-5_cifar10"
 
 python train.py --train_dir $train_dir \
     --network "lenet-5" \
