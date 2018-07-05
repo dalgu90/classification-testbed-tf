@@ -63,4 +63,6 @@ data/mnist/*
 !lenet-fc_cifar10.sh
 !lenet-5_cifar10.sh
 !lenet-5_cifar100.sh
+!vgg-16_cifar10.sh
+!vgg-16_cifar100.sh
 results
