@@ -18,5 +18,5 @@ python train.py --train_dir $train_dir \
     --lr_decay 0.1 \
     --max_steps 120000 \
     --checkpoint_interval 12000 \
-    --gpu_fraction 0.96 \
+    --gpu_fraction 0.95 \
     --display 100 \
